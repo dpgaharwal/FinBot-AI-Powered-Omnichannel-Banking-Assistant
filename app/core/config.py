@@ -12,6 +12,18 @@ class Settings(BaseSettings):
     LANGSMITH_PROJECT: str
     LANGCHAIN_TRACING_V2: str
 
+    MYSQL_HOST: str
+    MYSQL_PORT: int
+    MYSQL_DATABASE: str
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
+
+    QDRANT_HOST: str
+    QDRANT_PORT: int
+    QDRANT_COLLECTION: str
+
+    EMBEDDING_MODEL: str
+
     class Config:
         env_file = ".env"
 
