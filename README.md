@@ -10,7 +10,11 @@
 ![Compliance](https://img.shields.io/badge/Compliance-RBI%2FPCI--DSS-red?style=flat-square)
 
 ---
+## UI Interface
 
+<img width="3016" height="1566" alt="image" src="https://github.com/user-attachments/assets/20c78ba2-3df2-45a1-9ea6-b67081d77648" />
+
+---
 ## Table of Contents
 
 1. [Overview](#overview)
