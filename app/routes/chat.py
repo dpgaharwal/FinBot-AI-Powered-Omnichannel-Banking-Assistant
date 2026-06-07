@@ -1,15 +1,17 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException
-from app.services.llm import stream_ollama_response, traced_chat
+from langchain_core.messages import HumanMessage
+from app.agents.graph import finbot_graph
 from app.middleware.auth import verify_token
-import asyncio
 
 router = APIRouter()
+
 
 @router.post("/token")
 async def get_token():
     from app.middleware.auth import create_access_token
     token = create_access_token(data={"sub": "user_happy"})
     return {"access_token": token, "token_type": "bearer"}
+
 
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
@@ -21,33 +23,35 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
         return
 
     await websocket.accept()
-    conversation_history = []
+
+    state = {
+        "messages": [],
+        "intent": "",
+        "customer_email": "happy@finbot.com",
+        "customer_data": {},
+        "account_data": [],
+        "context": "",
+        "response": "",
+        "escalate": False,
+        "summary": ""
+    }
 
     try:
         while True:
             user_message = await websocket.receive_text()
 
-            conversation_history.append({
-                "role": "user",
-                "content": user_message
-            })
+            state["messages"] = state["messages"] + [HumanMessage(content=user_message)]
 
-            full_response = ""
+            result = await websocket.send_text("⏳ Thinking...")
 
-            # Stream to websocket
-            async for token_chunk in stream_ollama_response(conversation_history):
-                full_response += token_chunk
-                await websocket.send_text(token_chunk)
+            state = finbot_graph.invoke(state)
 
-            conversation_history.append({
-                "role": "assistant",
-                "content": full_response
-            })
+            response = state.get("response", "I'm sorry, I could not process that.")
+            intent = state.get("intent", "unknown")
 
+            await websocket.send_text(f"[INTENT:{intent}]")
+            await websocket.send_text(response)
             await websocket.send_text("[END]")
-
-            # Send to LangSmith as a trace (non-blocking)
-            asyncio.create_task(traced_chat(conversation_history))
 
     except WebSocketDisconnect:
         print(f"User {user} disconnected")
