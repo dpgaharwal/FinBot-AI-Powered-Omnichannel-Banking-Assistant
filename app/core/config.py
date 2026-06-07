@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str
     TWILIO_WHATSAPP_FROM: str
 
+    RAZORPAY_KEY_ID: str
+    RAZORPAY_KEY_SECRET: str
+    RABBITMQ_URL: str
+
     class Config:
         env_file = ".env"
 

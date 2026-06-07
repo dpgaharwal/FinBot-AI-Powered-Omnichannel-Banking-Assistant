@@ -5,6 +5,7 @@ from app.agents.balance_agent import balance_agent_node
 from app.agents.policy_agent import policy_agent_node
 from app.agents.dispute_agent import dispute_agent_node
 from app.agents.handoff_agent import handoff_agent_node
+from app.agents.payment_agent import payment_agent_node
 from app.agents.memory import summarize_conversation
 
 
@@ -14,8 +15,10 @@ def should_route(state: FinBotState) -> str:
         return "balance"
     elif intent == "policy":
         return "policy"
-    elif intent in ["dispute", "loan"]:
+    elif intent == "dispute":
         return "dispute"
+    elif intent == "loan":
+        return "payment"
     elif intent == "handoff":
         return "handoff"
     else:
@@ -44,6 +47,7 @@ def build_graph():
     graph.add_node("policy", policy_agent_node)
     graph.add_node("dispute", dispute_agent_node)
     graph.add_node("handoff", handoff_agent_node)
+    graph.add_node("payment", payment_agent_node)
 
     # Entry point
     graph.set_entry_point("memory")
@@ -54,13 +58,15 @@ def build_graph():
         "balance": "balance",
         "policy": "policy",
         "dispute": "dispute",
-        "handoff": "handoff"
+        "handoff": "handoff",
+        "payment": "payment"
     })
 
     graph.add_edge("balance", END)
     graph.add_edge("policy", END)
     graph.add_edge("dispute", END)
     graph.add_edge("handoff", END)
+    graph.add_edge("payment", END)
 
     return graph.compile()
 
