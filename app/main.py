@@ -17,6 +17,8 @@ from app.routes.whatsapp import router as whatsapp_router
 from app.middleware.rate_limit import limiter
 from app.core.config import settings
 from app.services.events import consume_emi_paid_events
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import asyncio
 import threading
 
@@ -47,6 +49,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="FinBot", version="1.0.0", lifespan=lifespan)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/chat")
+async def chat_ui():
+    return FileResponse("static/index.html")
 
 app.state.limiter = limiter
 

@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinBot — AI Banking Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0a0f1e;
+    --navy-2: #111827;
+    --navy-3: #1a2236;
+    --navy-4: #232d42;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: rgba(201,168,76,0.15);
+    --text: #e8e6e0;
+    --text-muted: #7a8099;
+    --text-dim: #4a5068;
+    --border: rgba(201,168,76,0.12);
+    --border-strong: rgba(201,168,76,0.25);
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --info: #5b9bd5;
+  }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 64px;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--navy-2);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--gold);
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .logo-text span {
+    color: var(--gold);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--navy-3);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2ecc71;
+    box-shadow: 0 0 6px #2ecc71;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .model-badge {
+    font-size: 11px;
+    color: var(--gold);
+    padding: 4px 10px;
+    border: 0.5px solid var(--gold-dim);
+    border-radius: 4px;
+    background: var(--gold-dim);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Layout */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    border-right: 0.5px solid var(--border);
+    background: var(--navy-2);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 1.5rem 0;
+  }
+
+  .sidebar-section {
+    padding: 0 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+
+  .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 13px;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .quick-action:hover {
+    background: var(--navy-3);
+    color: var(--text);
+  }
+
+  .quick-action.active {
+    background: var(--gold-dim);
+    color: var(--gold);
+    border: 0.5px solid var(--border-strong);
+  }
+
+  .qa-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--navy-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-divider {
+    height: 0.5px;
+    background: var(--border);
+    margin: 0.5rem 1.25rem 1rem;
+  }
+
+  .account-card {
+    margin: 0 1.25rem;
+    padding: 1rem;
+    background: var(--navy-3);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .account-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .account-name {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .account-number {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    font-family: monospace;
+  }
+
+  .account-balance {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .balance-label { font-size: 10px; color: var(--text-dim); }
+  .balance-amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--gold);
+  }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--navy-4); border-radius: 2px; }
+
+  /* Welcome */
+  .welcome {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .welcome-icon {
+    width: 64px;
+    height: 64px;
+    border: 1.5px solid var(--gold);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--gold);
+    margin: 0 auto 1.5rem;
+  }
+
+  .welcome h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .welcome p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .suggestion {
+    padding: 12px 14px;
+    background: var(--navy-3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .suggestion:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+    background: var(--navy-4);
+  }
+
+  /* Messages */
+  .message {
+    display: flex;
+    gap: 12px;
+    max-width: 80%;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message.bot {
+    align-self: flex-start;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .avatar.bot-avatar {
+    background: var(--gold-dim);
+    border: 0.5px solid var(--border-strong);
+    color: var(--gold);
+    font-family: 'DM Serif Display', serif;
+    font-size: 14px;
+  }
+
+  .avatar.user-avatar {
+    background: var(--navy-3);
+    border: 0.5px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 100%;
+  }
+
+  .message.bot .bubble {
+    background: var(--navy-3);
+    border: 0.5px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .message.user .bubble {
+    background: var(--gold-dim);
+    border: 0.5px solid var(--border-strong);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+
+  .intent-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .intent-balance { background: rgba(91,155,213,0.15); color: #5b9bd5; border: 0.5px solid rgba(91,155,213,0.3); }
+  .intent-policy { background: rgba(201,168,76,0.15); color: var(--gold); border: 0.5px solid rgba(201,168,76,0.3); }
+  .intent-dispute { background: rgba(231,76,60,0.15); color: #e74c3c; border: 0.5px solid rgba(231,76,60,0.3); }
+  .intent-loan { background: rgba(46,204,113,0.15); color: #2ecc71; border: 0.5px solid rgba(46,204,113,0.3); }
+  .intent-handoff { background: rgba(155,89,182,0.15); color: #9b59b6; border: 0.5px solid rgba(155,89,182,0.3); }
+  .intent-transactions { background: rgba(52,152,219,0.15); color: #3498db; border: 0.5px solid rgba(52,152,219,0.3); }
+  .intent-general { background: rgba(122,128,153,0.15); color: var(--text-muted); border: 0.5px solid var(--border); }
+
+  /* Typing */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 16px;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: typingBounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 1.25rem 2rem;
+    border-top: 0.5px solid var(--border);
+    background: var(--navy-2);
+  }
+
+  .input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--navy-3);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--border-strong);
+  }
+
+  .input-wrapper textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    resize: none;
+    line-height: 1.5;
+    max-height: 120px;
+    min-height: 24px;
+  }
+
+  .input-wrapper textarea::placeholder {
+    color: var(--text-dim);
+  }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--gold);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .send-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--navy);
+  }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    padding: 0 4px;
+  }
+
+  /* Connection banner */
+  .conn-banner {
+    padding: 8px 2rem;
+    background: rgba(231,76,60,0.1);
+    border-bottom: 0.5px solid rgba(231,76,60,0.2);
+    font-size: 12px;
+    color: #e74c3c;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .conn-banner.show { display: flex; }
+
+  /* Scrollable messages markdown-ish */
+  .bubble strong { font-weight: 500; color: var(--gold-light); }
+  .bubble code { font-family: monospace; font-size: 12px; background: var(--navy-4); padding: 1px 5px; border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .messages { padding: 1rem; }
+    .input-area { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">F</div>
+    <span class="logo-text">Fin<span>Bot</span></span>
+  </div>
+  <div class="header-right">
+    <div class="status-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <div class="model-badge">llama3 · MCP · RAG</div>
+  </div>
+</header>
+
+<div class="conn-banner" id="connBanner">
+  ⚠ Unable to connect. Make sure FinBot server is running on localhost:8000
+</div>
+
+<div class="main">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Actions</div>
+      <button class="quick-action" onclick="sendQuick('What is my account balance?')">
+        <div class="qa-icon">💰</div> Check Balance
+      </button>
+      <button class="quick-action" onclick="sendQuick('Show my recent transactions')">
+        <div class="qa-icon">📋</div> Transactions
+      </button>
+      <button class="quick-action" onclick="sendQuick('I want to pay my EMI')">
+        <div class="qa-icon">💳</div> Pay EMI
+      </button>
+      <button class="quick-action" onclick="sendQuick('What is the refund policy for failed transactions?')">
+        <div class="qa-icon">📖</div> Bank Policies
+      </button>
+      <button class="quick-action" onclick="sendQuick('My transaction failed, I want a refund')">
+        <div class="qa-icon">🔄</div> Raise Dispute
+      </button>
+      <button class="quick-action" onclick="sendQuick('I want to talk to a human agent')">
+        <div class="qa-icon">🧑‍💼</div> Human Agent
+      </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Account</div>
+      <div class="account-card">
+        <div class="account-label">Primary Account</div>
+        <div class="account-name">Happy Gaharwal</div>
+        <div class="account-number">ACC•••••7890</div>
+        <div class="account-balance">
+          <div>
+            <div class="balance-label">Savings</div>
+          </div>
+          <div class="balance-amount">₹45,230</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Security</div>
+      <div style="font-size:11px; color: var(--text-dim); line-height:1.6;">
+        🔒 JWT authenticated<br>
+        🛡 PII masked<br>
+        ⚡ RBI/PCI-DSS aligned
+      </div>
+    </div>
+  </aside>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">F</div>
+        <h2>Good day. How can I assist?</h2>
+        <p>I'm your AI banking assistant. Ask me about your balance, transactions, loan EMIs, bank policies, or raise a dispute.</p>
+        <div class="suggestion-grid">
+          <div class="suggestion" onclick="sendQuick('What is my account balance?')">What is my account balance?</div>
+          <div class="suggestion" onclick="sendQuick('Show my recent transactions')">Show my recent transactions</div>
+          <div class="suggestion" onclick="sendQuick('I want to pay my EMI')">I want to pay my loan EMI</div>
+          <div class="suggestion" onclick="sendQuick('What are the ATM withdrawal limits?')">What are ATM withdrawal limits?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="userInput"
+          placeholder="Ask about your account, policies, EMI payments..."
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000/api/v1';
+let ws = null;
+let token = null;
+let isTyping = false;
+
+async function init() {
+  try {
+    const res = await fetch(`${API}/token`, { method: 'POST' });
+    const data = await res.json();
+    token = data.access_token;
+    connectWS();
+  } catch(e) {
+    showBanner(true);
+    setStatus(false);
+  }
+}
+
+function connectWS() {
+  ws = new WebSocket(`ws://localhost:8000/api/v1/ws/chat?token=${token}`);
+
+  ws.onopen = () => {
+    setStatus(true);
+    showBanner(false);
+    document.getElementById('sendBtn').disabled = false;
+  };
+
+  ws.onclose = () => {
+    setStatus(false);
+    document.getElementById('sendBtn').disabled = true;
+    setTimeout(init, 3000);
+  };
+
+  ws.onerror = () => {
+    showBanner(true);
+    setStatus(false);
+  };
+
+  ws.onmessage = (e) => handleMessage(e.data);
+}
+
+let currentBotBubble = null;
+let currentIntent = null;
+let botMessageBuffer = '';
+
+function handleMessage(msg) {
+  if (msg === '[STATUS:online]') return;
+  if (msg === '[STATUS:offline]') return;
+
+  if (msg === '[TYPING:true]') {
+    showTyping();
+    return;
+  }
+
+  if (msg === '[TYPING:false]') {
+    hideTyping();
+    currentBotBubble = null;
+    currentIntent = null;
+    botMessageBuffer = '';
+    return;
+  }
+
+  if (msg.startsWith('[INTENT:')) {
+    currentIntent = msg.replace('[INTENT:', '').replace(']', '');
+    return;
+  }
+
+  if (msg === '[END]') {
+    currentBotBubble = null;
+    currentIntent = null;
+    botMessageBuffer = '';
+    return;
+  }
+
+  if (currentBotBubble === null) {
+    currentBotBubble = createBotBubble(currentIntent);
+    botMessageBuffer = '';
+  }
+
+  botMessageBuffer += msg;
+  currentBotBubble.innerHTML = formatMessage(botMessageBuffer);
+  scrollToBottom();
+}
+
+function createBotBubble(intent) {
+  removeWelcome();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar bot-avatar';
+  avatar.textContent = 'F';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (intent) {
+    const tag = document.createElement('div');
+    tag.className = `intent-tag intent-${intent}`;
+    tag.textContent = intent.toUpperCase();
+    bubble.appendChild(tag);
+    bubble.appendChild(document.createElement('br'));
+  }
+
+  const content = document.createElement('span');
+  bubble.appendChild(content);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  document.getElementById('messages').appendChild(wrapper);
+  scrollToBottom();
+
+  return content;
+}
+
+function formatMessage(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function showTyping() {
+  if (isTyping) return;
+  isTyping = true;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot';
+  wrapper.id = 'typingMsg';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar bot-avatar';
+  avatar.textContent = 'F';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  document.getElementById('messages').appendChild(wrapper);
+  scrollToBottom();
+}
+
+function hideTyping() {
+  isTyping = false;
+  const t = document.getElementById('typingMsg');
+  if (t) t.remove();
+}
+
+function addUserMessage(text) {
+  removeWelcome();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message user';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar user-avatar';
+  avatar.textContent = 'H';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  document.getElementById('messages').appendChild(wrapper);
+  scrollToBottom();
+}
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  addUserMessage(text);
+  ws.send(text);
+
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+function sendQuick(text) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function scrollToBottom() {
+  const m = document.getElementById('messages');
+  m.scrollTop = m.scrollHeight;
+}
+
+function removeWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+}
+
+function setStatus(online) {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (online) {
+    dot.style.background = '#2ecc71';
+    dot.style.boxShadow = '0 0 6px #2ecc71';
+    text.textContent = 'Connected';
+  } else {
+    dot.style.background = '#e74c3c';
+    dot.style.boxShadow = '0 0 6px #e74c3c';
+    text.textContent = 'Disconnected';
+  }
+}
+
+function showBanner(show) {
+  document.getElementById('connBanner').classList.toggle('show', show);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -10,34 +10,77 @@
 ![Compliance](https://img.shields.io/badge/Compliance-RBI%2FPCI--DSS-red?style=flat-square)
 
 ---
+
 ## UI Interface
 
-<img width="3016" height="1566" alt="image" src="https://github.com/user-attachments/assets/20c78ba2-3df2-45a1-9ea6-b67081d77648" />
+<img width="3016" height="1566" alt="FinBot Web Chat UI" src="https://github.com/user-attachments/assets/20c78ba2-3df2-45a1-9ea6-b67081d77648" />
+
+FinBot ships with a purpose-built web chat interface (`static/index.html`) styled in a banking-grade dark theme — deep navy backgrounds with gold accents, using DM Serif Display and DM Sans typefaces.
+
+### UI Features
+
+- **Auto-authentication** — on load, fetches a JWT from `POST /api/v1/token` and opens a WebSocket connection automatically
+- **Real-time WebSocket chat** — streams responses over the same `/api/v1/ws/chat` connection used by the backend, with auto-reconnect (3-second retry) on disconnect
+- **Typing indicator** — animated three-dot bounce displayed while the agent is processing, driven by `[TYPING:true/false]` frames
+- **Intent badges** — each bot response is prefixed with a colour-coded intent tag (`BALANCE`, `POLICY`, `DISPUTE`, `LOAN`, `HANDOFF`, `TRANSACTIONS`, `GENERAL`) derived from the `[INTENT:...]` frame
+- **Quick action sidebar** — six one-click buttons that pre-fill and submit common queries (Check Balance, Transactions, Pay EMI, Bank Policies, Raise Dispute, Human Agent)
+- **Suggestion chips** — welcome screen shows four prompt suggestions to guide first-time users
+- **Account card** — sidebar displays the primary account holder name, masked account number, and savings balance
+- **Security panel** — sidebar footer shows active security controls (JWT authenticated, PII masked, RBI/PCI-DSS aligned)
+- **Markdown rendering** — bot responses render `**bold**` as `<strong>` and `` `code` `` as `<code>` inline
+- **Connection banner** — red alert strip shown when the WebSocket cannot reach `localhost:8000`
+- **Responsive layout** — sidebar is hidden on screens narrower than 768px
+
+### How to Open the UI
+
+The interface is a self-contained HTML file that connects to the FinBot API on `localhost:8000`. Start the server first, then open the file in any browser:
+
+```bash
+# macOS
+open static/index.html
+
+# Linux
+xdg-open static/index.html
+
+# Windows
+start static/index.html
+```
+
+Or serve it through the FastAPI server by mounting the static directory. Add the following to `app/main.py` after the app is created:
+
+```python
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+```
+
+Then navigate to `http://localhost:8000` in your browser.
 
 ---
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Agent Flow](#agent-flow)
-4. [Event-Driven Flow](#event-driven-flow)
-5. [Memory Architecture](#memory-architecture)
-6. [Tech Stack](#tech-stack)
-7. [Features](#features)
-8. [Security & Compliance](#security--compliance)
-9. [Database Schema](#database-schema)
-10. [API Endpoints](#api-endpoints)
-11. [Prerequisites](#prerequisites)
-12. [Quick Start](#quick-start)
-13. [Environment Variables](#environment-variables)
-14. [Testing](#testing)
-15. [Running Evals](#running-evals)
-16. [Docker Setup](#docker-setup)
-17. [Project Structure](#project-structure)
-18. [Eval Results](#eval-results)
-19. [Roadmap](#roadmap)
-20. [Contributing](#contributing)
-21. [License](#license)
+1. [UI Interface](#ui-interface)
+2. [Overview](#overview)
+3. [Architecture](#architecture)
+4. [Agent Flow](#agent-flow)
+5. [Event-Driven Flow](#event-driven-flow)
+6. [Memory Architecture](#memory-architecture)
+7. [Tech Stack](#tech-stack)
+8. [Features](#features)
+9. [Security & Compliance](#security--compliance)
+10. [Database Schema](#database-schema)
+11. [API Endpoints](#api-endpoints)
+12. [Prerequisites](#prerequisites)
+13. [Quick Start](#quick-start)
+14. [Environment Variables](#environment-variables)
+15. [Testing](#testing)
+16. [Running Evals](#running-evals)
+17. [Docker Setup](#docker-setup)
+18. [Project Structure](#project-structure)
+19. [Eval Results](#eval-results)
+20. [Roadmap](#roadmap)
+21. [Contributing](#contributing)
+22. [License](#license)
 
 ---
 
@@ -855,6 +898,9 @@ finbot/
 │       ├── whatsapp.py          # Twilio client — send_whatsapp_message, parse_whatsapp_webhook
 │       ├── audit.py             # log_action() — inserts to audit_logs table
 │       └── guardrails.py        # mask_pii, check_prompt_injection, sanitize_input, sanitize_output
+│
+├── static/
+│   └── index.html               # Banking-themed dark web chat UI — WebSocket, intent badges, quick actions
 │
 ├── data/
 │   ├── bank_policies.py         # 15 bank policy documents with text + category/type metadata
