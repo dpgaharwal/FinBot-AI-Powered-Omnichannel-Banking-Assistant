@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     REDIS_PORT: int
     REDIS_DB: int
 
+    FIREBASE_SERVICE_ACCOUNT_PATH: str
+    FIREBASE_WEB_API_KEY: str
+
     class Config:
         env_file = ".env"
 
