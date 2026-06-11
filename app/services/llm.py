@@ -1,7 +1,10 @@
 import httpx
 import json
-from langsmith import traceable
 from app.core.config import settings
+from langchain_ollama import ChatOllama
+
+# Shared LLM singleton — all agents use this
+llm = ChatOllama(model=settings.OLLAMA_MODEL)
 
 
 async def stream_ollama_response(messages: list[dict]):
@@ -24,11 +27,3 @@ async def stream_ollama_response(messages: list[dict]):
                         yield token
                     if data.get("done"):
                         break
-
-
-@traceable(name="finbot_chat", run_type="llm")
-async def traced_chat(messages: list[dict]) -> str:
-    full_response = ""
-    async for token in stream_ollama_response(messages):
-        full_response += token
-    return full_response

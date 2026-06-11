@@ -4,8 +4,7 @@ from app.agents.state import FinBotState
 from app.services.mcp_server import execute_mcp_tool
 from app.agents.memory import build_context_with_memory
 from app.core.config import settings
-
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+from app.services.llm import llm
 
 
 def balance_agent_node(state: FinBotState) -> FinBotState:

@@ -7,8 +7,7 @@ from app.services.audit import log_action
 from app.core.config import settings
 import asyncio
 import concurrent.futures
-
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+from app.services.llm import llm
 
 
 def payment_agent_node(state: FinBotState) -> FinBotState:

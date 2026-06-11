@@ -5,13 +5,12 @@ from app.services.mcp_server import execute_mcp_tool
 from app.services.rag import search
 from app.agents.memory import build_context_with_memory
 from app.core.config import settings
-
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+from app.services.llm import llm
 
 
 def dispute_agent_node(state: FinBotState) -> FinBotState:
     customer_email = state.get("customer_email")
-    
+
     if not customer_email:
         return {
             **state,

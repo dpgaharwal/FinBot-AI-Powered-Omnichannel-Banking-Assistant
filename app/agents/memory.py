@@ -1,8 +1,7 @@
 from langchain_ollama import ChatOllama
 from app.core.config import settings
 from langchain_core.messages import SystemMessage
-
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+from app.services.llm import llm
 
 
 def summarize_conversation(messages: list) -> str:
