@@ -1,5 +1,6 @@
 from langchain_ollama import ChatOllama
 from app.core.config import settings
+from langchain_core.messages import SystemMessage
 
 llm = ChatOllama(model=settings.OLLAMA_MODEL)
 
@@ -33,5 +34,5 @@ Be concise, accurate, and professional."""
     if summary:
         system_prompt += f"\n\nConversation summary so far:\n{summary}"
 
-    from langchain_core.messages import SystemMessage
+    
     return [SystemMessage(content=system_prompt)] + messages[-4:]  # last 2 exchanges
