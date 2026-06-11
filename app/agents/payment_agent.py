@@ -1,18 +1,40 @@
-from langchain_ollama import ChatOllama
 from langchain_core.messages import AIMessage
 from app.agents.state import FinBotState
 from app.services.payment import create_emi_order, record_emi_payment, get_loan_details
 from app.services.events import publish_emi_paid_event
 from app.services.audit import log_action
-from app.core.config import settings
+from app.services.redis_client import set_idempotency_key, get_idempotency_key
+from app.services.llm import llm
 import asyncio
 import concurrent.futures
-from app.services.llm import llm
 
 
 def payment_agent_node(state: FinBotState) -> FinBotState:
-    customer_id = state.get("customer_data", {}).get("id", "c1")
-    customer_email = state.get("customer_email", "happy@finbot.com")
+    customer_email = state.get("customer_email")
+    if not customer_email:
+        response = "Authentication required. Please log in to access payment information."
+        return {
+            **state,
+            "response": response,
+            "messages": state["messages"] + [AIMessage(content=response)]
+        }
+
+    customer_data = state.get("customer_data", {})
+    customer_id = customer_data.get("id")
+
+    # If customer_data not populated yet fetch it
+    if not customer_id:
+        from app.services.tool_layer import execute_mcp_tool
+        customer = execute_mcp_tool("get_customer_by_email", {"email": customer_email})
+        customer_id = customer.get("id")
+
+    if not customer_id:
+        response = "Could not find your account. Please contact support."
+        return {
+            **state,
+            "response": response,
+            "messages": state["messages"] + [AIMessage(content=response)]
+        }
 
     loans = get_loan_details(customer_id)
 
@@ -30,13 +52,27 @@ def payment_agent_node(state: FinBotState) -> FinBotState:
     remaining = loan["remaining_emis"]
     loan_type = loan["loan_type"]
 
+    # Idempotency check — prevent duplicate EMI payments
+    idempotency_key = f"{customer_id}:{loan_id}:{remaining}"
+    existing = get_idempotency_key(idempotency_key)
+    if existing:
+        response = f"Your EMI payment for this month has already been processed. Transaction ID: {existing}"
+        return {
+            **state,
+            "response": response,
+            "messages": state["messages"] + [AIMessage(content=response)]
+        }
+
     try:
         order = create_emi_order(customer_id, loan_id, emi_amount)
         order_id = order.get("id", f"order_{loan_id}")
 
         txn_id = record_emi_payment(loan_id, customer_id, emi_amount, order_id)
 
-        # Publish event in separate thread with its own event loop
+        # Store idempotency key — expires in 24 hours
+        set_idempotency_key(idempotency_key, txn_id)
+
+        # Publish event in separate thread
         with concurrent.futures.ThreadPoolExecutor() as pool:
             pool.submit(
                 asyncio.run,

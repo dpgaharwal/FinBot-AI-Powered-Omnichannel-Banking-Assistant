@@ -24,3 +24,4 @@ slowapi==0.1.9
 better-profanity==0.7.0
 aiofiles==23.2.1
 langfuse==2.59.3
+redis==5.0.4
