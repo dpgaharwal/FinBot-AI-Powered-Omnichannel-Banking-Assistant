@@ -7,6 +7,15 @@ from app.agents.dispute_agent import dispute_agent_node
 from app.agents.handoff_agent import handoff_agent_node
 from app.agents.payment_agent import payment_agent_node
 from app.agents.memory import summarize_conversation
+from langchain_core.messages import AIMessage
+
+def general_node(state: FinBotState) -> FinBotState:
+    response = "I'm FinBot, your banking assistant. I can help you with:\n\n- Account balance and transactions\n- Bank policies and fees\n- Loan EMI payments\n- Dispute and refund requests\n- Connecting you to a human agent\n\nHow can I assist you today?"
+    return {
+        **state,
+        "response": response,
+        "messages": state["messages"] + [AIMessage(content=response)]
+    }
 
 
 def should_route(state: FinBotState) -> str:
