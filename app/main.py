@@ -19,6 +19,7 @@ from app.core.config import settings
 from app.services.events import consume_emi_paid_events
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from app.routes.auth import router as auth_router
 import asyncio
 import threading
 import time
@@ -73,6 +74,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(whatsapp_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 
 
 @app.get("/health")
