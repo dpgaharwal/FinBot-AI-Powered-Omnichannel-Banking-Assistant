@@ -6,6 +6,8 @@ from app.middleware.auth import verify_token
 from app.services.audit import log_action
 from app.services.guardrails import sanitize_input, sanitize_output
 from app.middleware.rate_limit import limiter
+from app.services.tracing import trace_agent_call
+import time
 import asyncio
 import secrets
 
@@ -100,15 +102,28 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
 
             state["messages"] = state["messages"] + [HumanMessage(content=sanitized)]
 
+            # Track latency
+            start_time = time.time()
             state = await asyncio.to_thread(finbot_graph.invoke, state)
+            latency_ms = (time.time() - start_time) * 1000
 
             response = state.get("response", "I'm sorry, I could not process that.")
             intent = state.get("intent", "unknown")
 
             # Guardrail — sanitize output
             safe_response = sanitize_output(response)
-
             masked_question = sanitize_output(user_message[:100])
+
+            # Trace to LangFuse
+            trace_agent_call(
+                user_id=user,
+                session_id=f"{user}_{id(websocket)}",
+                input_text=masked_question,
+                output_text=safe_response[:200],
+                intent=intent,
+                latency_ms=latency_ms
+            )
+
             log_action(
                 user_id=user,
                 action=f"intent:{intent}",
