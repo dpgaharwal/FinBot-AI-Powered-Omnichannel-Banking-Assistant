@@ -1,61 +1,65 @@
 import mysql.connector
+from mysql.connector import pooling
 from app.core.config import settings
+
+db_pool = mysql.connector.pooling.MySQLConnectionPool(
+    pool_name="finbot_pool",
+    pool_size=10,
+    host=settings.MYSQL_HOST,
+    port=settings.MYSQL_PORT,
+    database=settings.MYSQL_DATABASE,
+    user=settings.MYSQL_USER,
+    password=settings.MYSQL_PASSWORD
+)
 
 
 def get_connection():
-    return mysql.connector.connect(
-        host=settings.MYSQL_HOST,
-        port=settings.MYSQL_PORT,
-        database=settings.MYSQL_DATABASE,
-        user=settings.MYSQL_USER,
-        password=settings.MYSQL_PASSWORD
-    )
+    return db_pool.get_connection()
 
 
 def get_customer_by_email(email: str) -> dict:
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM customers WHERE email = %s", (email,))
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return result or {}
+    try:
+        with conn.cursor(dictionary=True) as cursor:
+            cursor.execute("SELECT * FROM customers WHERE email = %s", (email,))
+            return cursor.fetchone() or {}
+    finally:
+        conn.close()
 
 
 def get_accounts(customer_id: str) -> list:
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM accounts WHERE customer_id = %s", (customer_id,))
-    result = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return result
+    try:
+        with conn.cursor(dictionary=True) as cursor:
+            cursor.execute("SELECT * FROM accounts WHERE customer_id = %s", (customer_id,))
+            return cursor.fetchall()
+    finally:
+        conn.close()
 
 
 def get_transactions(account_id: str, limit: int = 5) -> list:
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT * FROM transactions WHERE account_id = %s ORDER BY created_at DESC LIMIT %s",
-        (account_id, limit)
-    )
-    result = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return result
+    try:
+        with conn.cursor(dictionary=True) as cursor:
+            cursor.execute(
+                "SELECT * FROM transactions WHERE account_id = %s ORDER BY created_at DESC LIMIT %s",
+                (account_id, limit)
+            )
+            return cursor.fetchall()
+    finally:
+        conn.close()
 
 
 def get_loans(customer_id: str) -> list:
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM loans WHERE customer_id = %s", (customer_id,))
-    result = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return result
+    try:
+        with conn.cursor(dictionary=True) as cursor:
+            cursor.execute("SELECT * FROM loans WHERE customer_id = %s", (customer_id,))
+            return cursor.fetchall()
+    finally:
+        conn.close()
 
 
-# MCP tool registry — LLM calls these by name
 MCP_TOOLS = {
     "get_customer_by_email": get_customer_by_email,
     "get_accounts": get_accounts,
