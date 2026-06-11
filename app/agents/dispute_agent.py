@@ -10,7 +10,15 @@ llm = ChatOllama(model=settings.OLLAMA_MODEL)
 
 
 def dispute_agent_node(state: FinBotState) -> FinBotState:
-    customer_email = state.get("customer_email", "happy@finbot.com")
+    customer_email = state.get("customer_email")
+    
+    if not customer_email:
+        return {
+            **state,
+            "response": "Authentication required. Please log in to access account information.",
+            "messages": state["messages"] + [AIMessage(content="Authentication required. Please log in to access account information.")]
+        }
+    
     last_message = state["messages"][-1].content
 
     # MCP — get recent transactions

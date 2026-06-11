@@ -9,8 +9,14 @@ llm = ChatOllama(model=settings.OLLAMA_MODEL)
 
 
 def balance_agent_node(state: FinBotState) -> FinBotState:
-    customer_email = state.get("customer_email", "happy@finbot.com")
-
+    customer_email = state.get("customer_email")
+    if not customer_email:
+        return {
+            **state,
+            "response": "Authentication required. Please log in to access account information.",
+            "messages": state["messages"] + [AIMessage(content="Authentication required. Please log in to access account information.")]
+        }
+    
     # MCP calls
     customer = execute_mcp_tool("get_customer_by_email", {"email": customer_email})
     accounts = execute_mcp_tool("get_accounts", {"customer_id": customer.get("id", "c1")})
