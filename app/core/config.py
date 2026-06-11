@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     LANGSMITH_PROJECT: str
     LANGCHAIN_TRACING_V2: str
 
+    LANGFUSE_PUBLIC_KEY: str
+    LANGFUSE_SECRET_KEY: str
+    LANGFUSE_HOST: str
+
     MYSQL_HOST: str
     MYSQL_PORT: int
     MYSQL_DATABASE: str
