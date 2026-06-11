@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str
     TWILIO_AUTH_TOKEN: str
     TWILIO_WHATSAPP_FROM: str
+    TWILIO_AUTH_TOKEN_WEBHOOK: str
 
     RAZORPAY_KEY_ID: str
     RAZORPAY_KEY_SECRET: str
