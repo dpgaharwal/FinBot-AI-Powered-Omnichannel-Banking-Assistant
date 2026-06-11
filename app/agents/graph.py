@@ -31,7 +31,7 @@ def should_route(state: FinBotState) -> str:
     elif intent == "handoff":
         return "handoff"
     else:
-        return "policy"
+        return "general"
 
 
 def memory_node(state: FinBotState) -> FinBotState:
@@ -57,6 +57,7 @@ def build_graph():
     graph.add_node("dispute", dispute_agent_node)
     graph.add_node("handoff", handoff_agent_node)
     graph.add_node("payment", payment_agent_node)
+    graph.add_node("general", general_node)
 
     # Entry point
     graph.set_entry_point("memory")
@@ -68,7 +69,8 @@ def build_graph():
         "policy": "policy",
         "dispute": "dispute",
         "handoff": "handoff",
-        "payment": "payment"
+        "payment": "payment",
+        "general": "general"
     })
 
     graph.add_edge("balance", END)
@@ -76,6 +78,7 @@ def build_graph():
     graph.add_edge("dispute", END)
     graph.add_edge("handoff", END)
     graph.add_edge("payment", END)
+    graph.add_edge("general", END)
 
     return graph.compile()
 
