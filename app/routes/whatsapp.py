@@ -3,6 +3,9 @@ from langchain_core.messages import HumanMessage
 from app.agents.graph import finbot_graph
 from app.services.whatsapp import send_whatsapp_message, parse_whatsapp_webhook
 from app.services.audit import log_action
+from app.middleware.rate_limit import limiter
+from fastapi import Request
+import asyncio
 
 router = APIRouter()
 
@@ -11,6 +14,7 @@ sessions: dict = {}
 
 
 @router.post("/webhook/whatsapp")
+@limiter.limit("30/minute")
 async def whatsapp_webhook(request: Request):
     form_data = await request.form()
     data = parse_whatsapp_webhook(dict(form_data))
@@ -39,7 +43,7 @@ async def whatsapp_webhook(request: Request):
     state["messages"] = state["messages"] + [HumanMessage(content=message)]
 
     # Run through same LangGraph pipeline
-    state = finbot_graph.invoke(state)
+    state = await asyncio.to_thread(finbot_graph.invoke, state)
     sessions[phone] = state
 
     response_text = state.get("response", "Sorry, I could not process that.")
