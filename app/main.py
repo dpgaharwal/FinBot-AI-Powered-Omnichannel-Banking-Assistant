@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import asyncio
 import threading
+import time
 
 
 async def handle_emi_notification(payload: dict):
@@ -30,14 +31,17 @@ async def handle_emi_notification(payload: dict):
 
 
 def start_consumer_thread():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(consume_emi_paid_events(handle_emi_notification))
-    except Exception as e:
-        print(f"Consumer thread error: {e}")
-    finally:
-        loop.close()
+    while True:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            print("RabbitMQ consumer starting...")
+            loop.run_until_complete(consume_emi_paid_events(handle_emi_notification))
+        except Exception as e:
+            print(f"RabbitMQ consumer failed, retrying in 5s: {e}")
+            time.sleep(5)
+        finally:
+            loop.close()
 
 
 @asynccontextmanager
