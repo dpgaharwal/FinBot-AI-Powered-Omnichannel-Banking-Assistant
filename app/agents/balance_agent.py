@@ -19,7 +19,17 @@ def balance_agent_node(state: FinBotState) -> FinBotState:
     
     # MCP calls
     customer = execute_mcp_tool("get_customer_by_email", {"email": customer_email})
-    accounts = execute_mcp_tool("get_accounts", {"customer_id": customer.get("id", "c1")})
+
+    customer_id = customer.get("id")
+
+    if not customer_id:
+        return {
+            **state,
+            "response": "Could not find your account. Please contact support.",
+            "messages": state["messages"] + [AIMessage(content="Could not find your account. Please contact support.")]
+        }
+    
+    accounts = execute_mcp_tool("get_accounts", {"customer_id": customer_id})
 
     # Build context
     account_summary = "\n".join([
