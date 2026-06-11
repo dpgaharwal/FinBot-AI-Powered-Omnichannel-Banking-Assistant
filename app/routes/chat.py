@@ -28,8 +28,8 @@ async def broadcast_to_user(user: str, message: str):
         for ws in active_connections[user]:
             try:
                 await ws.send_text(message)
-            except:
-                pass
+            except Exception as e:
+                print(f"WebSocket send failed for user {user}: {e}")
 
 
 @router.post("/token")
