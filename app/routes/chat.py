@@ -91,7 +91,7 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
                 log_action(
                     user_id=user,
                     action="blocked:injection",
-                    details=f"Blocked message: {user_message[:100]}",
+                    details=f"Blocked message: {sanitize_output(user_message[:100])}",
                     outcome="failure"
                 )
                 continue
@@ -108,10 +108,11 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
             # Guardrail — sanitize output
             safe_response = sanitize_output(response)
 
+            masked_question = sanitize_output(user_message[:100])
             log_action(
                 user_id=user,
                 action=f"intent:{intent}",
-                details=f"Q: {user_message[:100]} | A: {safe_response[:100]}",
+                details=f"Q: {masked_question} | A: {safe_response[:100]}",
                 outcome="success"
             )
 
