@@ -1,12 +1,24 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException, Depends, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from langchain_core.messages import HumanMessage
 from app.agents.graph import finbot_graph
 from app.middleware.auth import verify_token
 from app.services.audit import log_action
 from app.services.guardrails import sanitize_input, sanitize_output
+from app.middleware.rate_limit import limiter
 import asyncio
+import secrets
 
 router = APIRouter()
+
+security = HTTPBasic()
+
+# Demo users - in production this comes from DB / Firebase
+DEMO_USERS = {
+    "happy@finbot.com": {"password": "finbot123", "customer_id": "c1"},
+    "priya@finbot.com": {"password": "finbot123", "customer_id": "c2"},
+    "rahul@finbot.com": {"password": "finbot123", "customer_id": "c3"},
+}
 
 active_connections: dict[str, list[WebSocket]] = {}
 
@@ -16,14 +28,24 @@ async def broadcast_to_user(user: str, message: str):
         for ws in active_connections[user]:
             try:
                 await ws.send_text(message)
-            except:
-                pass
+            except Exception as e:
+                print(f"WebSocket send failed for user {user}: {e}")
 
 
 @router.post("/token")
-async def get_token():
+async def get_token(credentials: HTTPBasicCredentials = Depends(security)):
+    user = DEMO_USERS.get(credentials.username)
+    if not user or not secrets.compare_digest(credentials.password, user["password"]):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"}
+        )
     from app.middleware.auth import create_access_token
-    token = create_access_token(data={"sub": "user_happy"})
+    token = create_access_token(data={
+        "sub": credentials.username,
+        "customer_id": user["customer_id"]
+    })
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -32,6 +54,7 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
     try:
         payload = verify_token(token)
         user = payload.get("sub")
+        customer_id = payload.get("customer_id", "c1")
     except HTTPException:
         await websocket.close(code=1008)
         return
@@ -47,7 +70,7 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
     state = {
         "messages": [],
         "intent": "",
-        "customer_email": "happy@finbot.com",
+        "customer_email": user,
         "customer_data": {},
         "account_data": [],
         "context": "",
@@ -68,7 +91,7 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
                 log_action(
                     user_id=user,
                     action="blocked:injection",
-                    details=f"Blocked message: {user_message[:100]}",
+                    details=f"Blocked message: {sanitize_output(user_message[:100])}",
                     outcome="failure"
                 )
                 continue
@@ -77,7 +100,7 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
 
             state["messages"] = state["messages"] + [HumanMessage(content=sanitized)]
 
-            state = finbot_graph.invoke(state)
+            state = await asyncio.to_thread(finbot_graph.invoke, state)
 
             response = state.get("response", "I'm sorry, I could not process that.")
             intent = state.get("intent", "unknown")
@@ -85,10 +108,11 @@ async def websocket_chat(websocket: WebSocket, token: str = Query(...)):
             # Guardrail — sanitize output
             safe_response = sanitize_output(response)
 
+            masked_question = sanitize_output(user_message[:100])
             log_action(
                 user_id=user,
                 action=f"intent:{intent}",
-                details=f"Q: {user_message[:100]} | A: {safe_response[:100]}",
+                details=f"Q: {masked_question} | A: {safe_response[:100]}",
                 outcome="success"
             )
 

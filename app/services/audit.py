@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from app.services.mcp_server import get_connection
+from app.services.tool_layer import get_connection
 
 
 def log_action(user_id: str, action: str, details: str, outcome: str = "success"):

@@ -9,7 +9,7 @@ async def publish_event(event_type: str, payload: dict):
         connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
         async with connection:
             channel = await connection.channel()
-            queue = await channel.declare_queue(event_type, durable=True)
+            await channel.declare_queue(event_type, durable=True)
             message = aio_pika.Message(
                 body=json.dumps(payload).encode(),
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT

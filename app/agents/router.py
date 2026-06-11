@@ -2,8 +2,9 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from app.agents.state import FinBotState
 from app.core.config import settings
+from app.services.llm import llm
 
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+
 
 INTENT_PROMPT = """You are an intent classifier for a banking assistant.
 Classify the user's message into exactly one of these intents:

@@ -1,6 +1,6 @@
 import razorpay
 from app.core.config import settings
-from app.services.mcp_server import get_connection
+from app.services.tool_layer import get_connection
 from datetime import datetime
 import uuid
 
@@ -26,36 +26,34 @@ def create_emi_order(customer_id: str, loan_id: str, emi_amount: float) -> dict:
 
 
 def record_emi_payment(loan_id: str, customer_id: str, amount: float, order_id: str) -> str:
-    """Record EMI payment in DB and return transaction id."""
     txn_id = str(uuid.uuid4())
     conn = get_connection()
-    cursor = conn.cursor()
-
-    # Insert transaction record
-    cursor.execute(
-        """INSERT INTO transactions (id, account_id, type, amount, description, status, created_at)
-           SELECT %s, a.id, 'debit', %s, %s, 'success', %s
-           FROM accounts a WHERE a.customer_id = %s LIMIT 1""",
-        (
-            txn_id,
-            amount,
-            f"EMI payment for loan {loan_id} | Order {order_id}",
-            datetime.utcnow(),
-            customer_id
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO transactions (id, account_id, type, amount, description, status, created_at)
+               SELECT %s, a.id, 'debit', %s, %s, 'success', %s
+               FROM accounts a WHERE a.customer_id = %s LIMIT 1""",
+            (
+                txn_id,
+                amount,
+                f"EMI payment for loan {loan_id} | Order {order_id}",
+                datetime.utcnow(),
+                customer_id
+            )
         )
-    )
-
-    # Update remaining EMIs
-    cursor.execute(
-        "UPDATE loans SET remaining_emis = remaining_emis - 1 WHERE id = %s",
-        (loan_id,)
-    )
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return txn_id
-
+        cursor.execute(
+            "UPDATE loans SET remaining_emis = remaining_emis - 1 WHERE id = %s",
+            (loan_id,)
+        )
+        conn.commit()
+        cursor.close()
+        return txn_id
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
 
 def get_loan_details(customer_id: str) -> list:
     """Get active loans for customer."""

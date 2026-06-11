@@ -4,8 +4,7 @@ from app.agents.state import FinBotState
 from app.services.rag import search
 from app.agents.memory import build_context_with_memory
 from app.core.config import settings
-
-llm = ChatOllama(model=settings.OLLAMA_MODEL)
+from app.services.llm import llm
 
 
 def policy_agent_node(state: FinBotState) -> FinBotState:
